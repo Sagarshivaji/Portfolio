@@ -295,4 +295,3 @@ toolsSection.addEventListener('mousemove', (e) => {
 document.querySelector('#toggleTheme').addEventListener('click', () => {
   document.body.classList.toggle('dark-mode');
 });
-
