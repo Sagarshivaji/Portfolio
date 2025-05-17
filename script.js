@@ -1,5 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
-  // Section observer for animations
+document.addEventListener('DOMContentLoaded', function () {
   const sections = document.querySelectorAll("section");
   const navLinks = document.querySelectorAll("nav a");
 
@@ -8,7 +7,6 @@ document.addEventListener('DOMContentLoaded', function() {
       entries.forEach(entry => {
         if (entry.isIntersecting) {
           entry.target.classList.add("visible");
-          
           const id = entry.target.getAttribute("id");
           navLinks.forEach(link => {
             link.classList.toggle("active", link.getAttribute("href") === `#${id}`);
@@ -16,12 +14,11 @@ document.addEventListener('DOMContentLoaded', function() {
         }
       });
     },
-    { threshold: 0.2 }
+    { threshold: 0.8 }
   );
 
   sections.forEach(section => sectionObserver.observe(section));
 
-  // Floating icons with bounce effect
   const toolsSection = document.getElementById("tools-section");
   const icons = document.querySelectorAll(".tool-icon");
   const assembleBtn = document.getElementById("assemble-btn");
@@ -30,71 +27,146 @@ document.addEventListener('DOMContentLoaded', function() {
     console.warn("Required elements not found for icon animation");
     return;
   }
-
+  
   let isAssembled = false;
   let animationFrameId = null;
   const velocities = [];
   const positions = [];
   const iconSize = 60;
   const bounceFactor = 0.9;
+  const cursorRadius = 30;
 
-  // Initialize icons with random positions and velocities
+
+  
+
+  let mouse = { x: null, y: null };
+
+  toolsSection.addEventListener('mousemove', (e) => {
+    const rect = toolsSection.getBoundingClientRect();
+    mouse.x = e.clientX - rect.left;
+    mouse.y = e.clientY - rect.top;
+  });
+  toolsSection.addEventListener('click', () => {
+    icons.forEach((_, i) => {
+      velocities[i].x += (Math.random() - 0.5) * 10;
+      velocities[i].y += (Math.random() - 0.5) * 10;
+    });
+  });
+  
+
+  toolsSection.addEventListener('mouseleave', () => {
+    mouse.x = null;
+    mouse.y = null;
+  });
+
   function initializeIcons() {
     const containerWidth = toolsSection.offsetWidth;
     const containerHeight = toolsSection.offsetHeight;
-  
+
     icons.forEach((icon, index) => {
       const x = Math.random() * (containerWidth - iconSize);
       const y = Math.random() * (containerHeight - iconSize);
-  
+
       icon.style.position = "absolute";
       icon.style.width = `${iconSize}px`;
       icon.style.height = `${iconSize}px`;
       icon.style.left = `${x}px`;
       icon.style.top = `${y}px`;
-  
+
       positions[index] = { x, y };
       velocities[index] = {
-        x: (Math.random() * 4 - 2),
-        y: (Math.random() * 4 - 2)
+        x: (Math.random() * 2 - 1),
+        y: (Math.random() * 2 - 1)
       };
     });
   }
 
-  // Main animation loop
+  function handleCollisions() {
+    for (let i = 0; i < icons.length; i++) {
+      for (let j = i + 1; j < icons.length; j++) {
+        const dx = positions[i].x - positions[j].x;
+        const dy = positions[i].y - positions[j].y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        if (distance < iconSize) {
+          // Simple elastic collision response
+          const angle = Math.atan2(dy, dx);
+          const speed = 2;
+
+          velocities[i].x += Math.cos(angle) * speed;
+          velocities[i].y += Math.sin(angle) * speed;
+
+          velocities[j].x -= Math.cos(angle) * speed;
+          velocities[j].y -= Math.sin(angle) * speed;
+        }
+      }
+    }
+  }
+
+  function applyMouseRepulsion(index) {
+    if (mouse.x === null || mouse.y === null) return;
+  
+    const icon = icons[index];
+    const dx = positions[index].x + iconSize / 2 - mouse.x;
+    const dy = positions[index].y + iconSize / 2 - mouse.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+
+    if (dist < 80) {
+      icons[index].style.transform = 'scale(1.2)';
+      setTimeout(() => {
+        icons[index].style.transform = 'scale(1)';
+      }, 150);
+    }
+    
+  
+    if (dist < 150 && dist > 0) {
+      const force = 6 / dist;
+      velocities[index].x += (dx / dist) * force;
+      velocities[index].y += (dy / dist) * force;
+  
+      // Optional: Add temporary visual feedback
+      icon.style.transform = `scale(${1 + 0.3 * (1 - dist / 150)})`;
+      icon.style.filter = `brightness(${1.5 - dist / 150})`;
+      icon.style.zIndex = 1;
+    } else {
+      icon.style.transform = "scale(1)";
+      icon.style.filter = "brightness(1)";
+      icon.style.zIndex = 0;
+    }
+  }
+  
+
   function animateIcons() {
     if (isAssembled) return;
-  
+
     const containerWidth = toolsSection.offsetWidth;
     const containerHeight = toolsSection.offsetHeight;
-  
+
+    handleCollisions();
+
     icons.forEach((icon, index) => {
+      applyMouseRepulsion(index);
+
       let { x, y } = positions[index];
-  
+
       x += velocities[index].x;
       y += velocities[index].y;
-  
-      if (x <= 0) {
-        x = 0;
-        velocities[index].x = Math.abs(velocities[index].x) * bounceFactor;
-      } else if (x + iconSize >= containerWidth) {
-        x = containerWidth - iconSize;
-        velocities[index].x = -Math.abs(velocities[index].x) * bounceFactor;
+
+      if (x <= 0 || x + iconSize >= containerWidth) {
+        velocities[index].x *= -bounceFactor;
+        x = Math.max(0, Math.min(containerWidth - iconSize, x));
       }
-  
-      if (y <= 0) {
-        y = 0;
-        velocities[index].y = Math.abs(velocities[index].y) * bounceFactor;
-      } else if (y + iconSize >= containerHeight) {
-        y = containerHeight - iconSize;
-        velocities[index].y = -Math.abs(velocities[index].y) * bounceFactor;
+
+      if (y <= 0 || y + iconSize >= containerHeight) {
+        velocities[index].y *= -bounceFactor;
+        y = Math.max(0, Math.min(containerHeight - iconSize, y));
       }
-  
+
       positions[index] = { x, y };
       icon.style.left = `${x}px`;
       icon.style.top = `${y}px`;
     });
-  
+
     animationFrameId = requestAnimationFrame(animateIcons);
   }
 
@@ -115,29 +187,28 @@ document.addEventListener('DOMContentLoaded', function() {
     const containerHeight = toolsSection.offsetHeight;
     const cols = Math.max(1, Math.floor(containerWidth / (iconSize + 20)));
     const rows = Math.ceil(icons.length / cols);
-    
+
     const startX = (containerWidth - (cols * (iconSize + 20) - 20)) / 2;
     const startY = (containerHeight - (rows * (iconSize + 20) - 20)) / 2;
-    
+
     icons.forEach((icon, index) => {
       const col = index % cols;
       const row = Math.floor(index / cols);
-      
+
       const x = startX + col * (iconSize + 20);
       const y = startY + row * (iconSize + 20);
-      
+
       icon.style.transition = "all 0.5s ease-out";
       icon.style.left = `${x}px`;
       icon.style.top = `${y}px`;
     });
   }
 
-  // Toggle between assembled and floating states
   assembleBtn.addEventListener("click", function () {
     isAssembled = !isAssembled;
     toolsSection.classList.toggle("assembled", isAssembled);
     assembleBtn.textContent = isAssembled ? "Scatter" : "Assemble";
-  
+
     if (isAssembled) {
       stopFloating();
       assembleIcons();
@@ -149,8 +220,8 @@ document.addEventListener('DOMContentLoaded', function() {
           y: Math.random() * (toolsSection.offsetHeight - iconSize)
         };
         velocities[index] = {
-          x: (Math.random() * 4 - 2),
-          y: (Math.random() * 4 - 2)
+          x: (Math.random() * 2 - 1),
+          y: (Math.random() * 2 - 2)
         };
         icon.style.left = `${positions[index].x}px`;
         icon.style.top = `${positions[index].y}px`;
@@ -161,15 +232,14 @@ document.addEventListener('DOMContentLoaded', function() {
       startFloating();
     }
   });
-  
-  // Handle window resize
-  window.addEventListener('resize', function() {
+
+  window.addEventListener('resize', () => {
     if (isAssembled) {
       assembleIcons();
     }
   });
 
-  // Project scroll functionality
+  // Project scroll buttons
   const scrollWrapper = document.querySelector('.projects-scroll-wrapper');
   const backBtn = document.querySelector('.scroll-btn.left');
   const forwardBtn = document.querySelector('.scroll-btn.right');
@@ -182,7 +252,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
     const updateButtonStates = () => {
       backBtn.disabled = scrollWrapper.scrollLeft <= 10;
-      forwardBtn.disabled = scrollWrapper.scrollLeft >= 
+      forwardBtn.disabled = scrollWrapper.scrollLeft >=
         (scrollWrapper.scrollWidth - scrollWrapper.clientWidth - 10);
     };
 
@@ -203,8 +273,26 @@ document.addEventListener('DOMContentLoaded', function() {
   // Initialize
   initializeIcons();
   startFloating();
+  // Track mouse position
+ document.addEventListener("mousemove", e => {
+  const rect = toolsSection.getBoundingClientRect();
+  mouse.x = e.clientX - rect.left;
+  mouse.y = e.clientY - rect.top;
 });
-// Toggle body class "dark-mode" on click
+const cursorGlow = document.createElement('div');
+cursorGlow.className = 'cursor-glow';
+toolsSection.appendChild(cursorGlow);
+
+toolsSection.addEventListener('mousemove', (e) => {
+  cursorGlow.style.left = `${e.clientX - toolsSection.getBoundingClientRect().left}px`;
+  cursorGlow.style.top = `${e.clientY - toolsSection.getBoundingClientRect().top}px`;
+});
+
+
+});
+
+// Toggle body class "dark-mode"
 document.querySelector('#toggleTheme').addEventListener('click', () => {
   document.body.classList.toggle('dark-mode');
 });
+
