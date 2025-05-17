@@ -91,7 +91,7 @@ document.addEventListener('DOMContentLoaded', function () {
         if (distance < iconSize) {
           // Simple elastic collision response
           const angle = Math.atan2(dy, dx);
-          const speed = 2;
+          const speed = 1;
 
           velocities[i].x += Math.cos(angle) * speed;
           velocities[i].y += Math.sin(angle) * speed;
