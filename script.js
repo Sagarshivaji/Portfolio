@@ -74,8 +74,8 @@ document.addEventListener('DOMContentLoaded', function () {
 
       positions[index] = { x, y };
       velocities[index] = {
-        x: (Math.random() * 2 - 1),
-        y: (Math.random() * 2 - 1)
+        x: (Math.random() * 4 - 2),
+        y: (Math.random() * 4 - 2)
       };
     });
   }
