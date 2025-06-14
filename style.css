@@ -93,7 +93,7 @@ nav a:hover::after {
 
 .header-buttons .btn {
   padding: 0.5rem 1rem;
-  border: 2px solid #08db32;
+  border: 2px solid #008a2dc8;
   background-color: rgba(255, 255, 255, 0.1);
   color: #1bd741;
   font-weight: bold;
@@ -107,7 +107,7 @@ nav a:hover::after {
 
 .header-buttons .btn:hover {
   background-color: rgba(27, 215, 65, 0.2);
-  color: #0c8c2d;
+  color: #008a2dc8;
   transform: scale(1.05);
 }
 
@@ -684,6 +684,11 @@ footer {
 }
 .cta-button {
   background-color: var(--accent);
+}
+.contact h2 {
+  text-align: center;
+  margin-bottom: 2rem;
+  color: #089925;
 }
 .contact-form {
   background: rgb(255, 255, 255);
