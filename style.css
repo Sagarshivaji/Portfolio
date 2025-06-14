@@ -95,7 +95,7 @@ nav a:hover::after {
   padding: 0.5rem 1rem;
   border: 2px solid #008a2dc8;
   background-color: rgba(255, 255, 255, 0.1);
-  color: #1bd741;
+  color: #008a2dc8;
   font-weight: bold;
   border-radius: 10px;
   backdrop-filter: blur(10px);
